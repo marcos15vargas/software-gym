@@ -12,7 +12,7 @@ export const POST = async ({ request, cookies, redirect }) => {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: provider,
       options: {
-        redirectTo: "https://software-gym.vercel.app/api/auth/callbacks"
+        redirectTo: "https://software-gym.vercel.app/api/auth/callbacks",
       },
     });
 
