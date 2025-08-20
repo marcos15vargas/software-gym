@@ -1,0 +1,79 @@
+---
+import RenewButton from '../../components/RenewButton.jsx';
+import type { GetStaticPaths } from "astro";
+import Layout from '../../layouts/Layout.astro';
+import { supabase } from '../../db/supabase';
+import { isSubscriptionActive} from '../../lib/renew.supabase.js';
+import Logo from '../../assets/Logo.astro'
+
+export async function getStaticPaths() {
+    const { data: users, error } = await supabase
+        .from('users')
+        .select('id');
+
+    const info: { params: { id: string; }; }[] = []
+
+    users?.forEach((ids) => {
+        info.push({ params: { id: String(ids.id) } })
+    })
+    // CORRECTO: retornar solo el array
+    return info;
+};
+
+const { id } = Astro.params;
+const { data: users, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', id);
+
+if (error) {
+    throw new Error(error.message);
+}
+
+---
+<Layout>
+    <section class="max-w-4xl mx-auto p-4 border border-amarillo mt-10">
+        <div class="flex text-fondo justify-between items-center mb-4 bg-amarillo py-4 px-4">
+            <div class="flex items-center w-12">
+                <Logo />
+            </div>
+            <div class="mt-4">
+                <h2 class="text-3xl font-bold mb-4 text-center text-fondo">Informacion del Usuario</h2>
+            </div>
+            <div class="flex gap-4">
+                <a href="/dashboard" class="font-bold hover:text-white">Volver atras</a>
+            </div>
+        </div>
+        
+        {
+            users && users.length > 0 ? (
+                users.map((user) => (
+                    <div>
+                        <h2 class="text-3xl font-bold mb-1 text-amarillo">Nombre y Apellido</h2>
+                        <h3 class="text-xl font-bold mb-4 uppercase">{user.name} {user.lastName}</h3>
+                        <h2 class="text-3xl font-bold mb-1 text-amarillo">Plan Solicitado</h2>
+                        <h2 class="text-xl font-bold mb-4">Plan {user.plan}</h2>
+                        <h2 class="text-3xl font-bold mb-1 text-amarillo">Fecha de Vencimiento</h2>
+                        <h2 class="text-xl font-bold mb-4">{user.payDay}</h2>
+                        <div class="flex items-center gap-4">
+                            <RenewButton client:only="react" userId={user.id} currentPayDay={user.payDay}/>
+                        </div>
+                        {
+                            isSubscriptionActive(user.payDay)
+                            ? <div class="bg-green-200 text-green-800 p-4 rounded font-bold text-center mt-4">¡Su suscripción está activa! Puede pasar.</div>
+                            : <div class="bg-red-200 text-red-800 p-4 rounded font-bold text-center mt-4">No puede pasar. Debe pagar la suscripción de este mes.</div>
+                        }
+
+                    </div>
+                ))
+            ) : (
+                <p>No se encontró ninguna usuario con ese ID.</p>
+            )
+        }
+
+        {
+        }
+    </section>
+    <script>
+    </script>
+</Layout>
